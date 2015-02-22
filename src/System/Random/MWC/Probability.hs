@@ -22,7 +22,7 @@ module System.Random.MWC.Probability (
 import Control.Applicative
 import Control.Monad
 import Control.Monad.Primitive
-import Control.Monad.Trans
+import Control.Monad.Trans.Class
 import System.Random.MWC as MWC hiding (uniform, uniformR)
 import qualified System.Random.MWC as QMWC
 import qualified System.Random.MWC.Distributions as MWC.Dist
