@@ -15,14 +15,17 @@ module System.Random.MWC.Probability (
   , chiSquare
   , beta
   , dirichlet
+  , symmetricDirichlet
   , bernoulli
   , binomial
+  , multinomial
   ) where
 
 import Control.Applicative
 import Control.Monad
 import Control.Monad.Primitive
 import Control.Monad.Trans.Class
+import Data.List (findIndex)
 import System.Random.MWC as MWC hiding (uniform, uniformR)
 import qualified System.Random.MWC as QMWC
 import qualified System.Random.MWC.Distributions as MWC.Dist
@@ -106,6 +109,10 @@ dirichlet as = do
   return $ map (/ sum zs) zs
 {-# INLINE dirichlet #-}
 
+symmetricDirichlet :: PrimMonad m => Int -> Double -> Prob m [Double]
+symmetricDirichlet n a = dirichlet (replicate n a)
+{-# INLINE symmetricDirichlet #-}
+
 bernoulli :: PrimMonad m => Double -> Prob m Bool
 bernoulli p = (< p) <$> uniform
 {-# INLINE bernoulli #-}
@@ -113,4 +120,13 @@ bernoulli p = (< p) <$> uniform
 binomial :: PrimMonad m => Int -> Double -> Prob m Int
 binomial n p = liftM (length . filter id) $ replicateM n (bernoulli p)
 {-# INLINE binomial #-}
+
+multinomial :: PrimMonad m => Int -> [Double] -> Prob m [Int]
+multinomial n ps = do
+  let cumulative = scanl1 (+) ps
+  replicateM n $ do
+    z <- uniform
+    let Just g = findIndex (> z) cumulative
+    return g
+{-# INLINE multinomial #-}
 
