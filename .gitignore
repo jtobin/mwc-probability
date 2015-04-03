@@ -2,3 +2,4 @@
 dist
 *swp
 cabal.sandbox.config
+debug
