@@ -19,6 +19,8 @@ module System.Random.MWC.Probability (
   , bernoulli
   , binomial
   , multinomial
+  , t
+  , isoGauss
   ) where
 
 import Control.Applicative
@@ -129,4 +131,14 @@ multinomial n ps = do
     let Just g = findIndex (> z) cumulative
     return g
 {-# INLINE multinomial #-}
+
+t :: PrimMonad m => Double -> Double -> Double -> Prob m Double
+t m s k = do
+  sd <- sqrt <$> inverseGamma (k / 2) (s * 2 / k)
+  normal m sd
+{-# INLINE t #-}
+
+isoGauss :: PrimMonad m => [Double] -> Double -> Prob m [Double]
+isoGauss ms sd = mapM (\m -> normal m sd) ms
+{-# INLINE isoGauss #-}
 
