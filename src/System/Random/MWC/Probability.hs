@@ -21,6 +21,7 @@ module System.Random.MWC.Probability (
   , multinomial
   , t
   , isoGauss
+  , poisson
   ) where
 
 import Control.Applicative
@@ -31,6 +32,7 @@ import Data.List (findIndex)
 import System.Random.MWC as MWC hiding (uniform, uniformR)
 import qualified System.Random.MWC as QMWC
 import qualified System.Random.MWC.Distributions as MWC.Dist
+import System.Random.MWC.CondensedTable
 
 newtype Prob m a = Prob { sample :: Gen (PrimState m) -> m a }
 
@@ -141,4 +143,9 @@ t m s k = do
 isoGauss :: PrimMonad m => [Double] -> Double -> Prob m [Double]
 isoGauss ms sd = mapM (\m -> normal m sd) ms
 {-# INLINE isoGauss #-}
+
+poisson :: PrimMonad m => Double -> Prob m Int
+poisson l = Prob $ genFromTable table where
+  table = tablePoisson l
+{-# INLINE poisson #-}
 
