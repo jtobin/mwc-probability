@@ -5,6 +5,7 @@ module System.Random.MWC.Probability (
   , Prob(..)
   , uniform
   , uniformR
+  , discreteUniform
   , categorical
   , standard
   , normal
@@ -66,11 +67,11 @@ uniformR :: (PrimMonad m, Variate a) => (a, a) -> Prob m a
 uniformR r = Prob $ QMWC.uniformR r
 {-# INLINE uniformR #-}
 
-categorical :: PrimMonad m => [a] -> Prob m a
-categorical cs = do
+discreteUniform :: PrimMonad m => [a] -> Prob m a
+discreteUniform cs = do
   j <- uniformR (0, length cs - 1)
   return $ cs !! j
-{-# INLINE categorical #-}
+{-# INLINE discreteUniform #-}
 
 standard :: PrimMonad m => Prob m Double
 standard = Prob MWC.Dist.standard
@@ -148,4 +149,12 @@ poisson :: PrimMonad m => Double -> Prob m Int
 poisson l = Prob $ genFromTable table where
   table = tablePoisson l
 {-# INLINE poisson #-}
+
+categorical :: PrimMonad m => [Double] -> Prob m Int
+categorical ps = do
+  xs <- multinomial 1 ps
+  case xs of
+    [x] -> return x
+    _   -> error "categorical: invalid return value"
+{-# INLINE categorical #-}
 
