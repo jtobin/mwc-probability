@@ -47,6 +47,14 @@ instance Monad m => Applicative (Prob m) where
   {-# INLINE pure #-}
   {-# INLINE (<*>) #-}
 
+instance (Applicative m, Monad m, Num a) => Num (Prob m a) where
+  (+)         = liftA2 (+)
+  (-)         = liftA2 (-)
+  (*)         = liftA2 (*)
+  abs         = fmap abs
+  signum      = fmap signum
+  fromInteger = pure . fromInteger
+
 instance Monad m => Monad (Prob m) where
   return  = Prob . const . return
   m >>= h = Prob $ \g -> do
