@@ -1,5 +1,5 @@
 name:                mwc-probability
-version:             1.0.0
+version:             1.0.1
 homepage:            http://github.com/jtobin/mwc-probability
 license:             MIT
 license-file:        LICENSE
@@ -7,7 +7,7 @@ author:              Jared Tobin
 maintainer:          jared@jtobin.ca
 category:            Math
 build-type:          Simple
-cabal-version:       >= 1.18
+cabal-version:       >= 1.10
 synopsis:            Sampling function-based probability distributions.
 description:
 
