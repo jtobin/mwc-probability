@@ -22,7 +22,7 @@ module System.Random.MWC.Probability (
   , bernoulli
   , binomial
   , multinomial
-  , t
+  , student
   , isoGauss
   , poisson
   ) where
@@ -40,8 +40,9 @@ import System.Random.MWC.CondensedTable
 -- | A probability distribution characterized by a sampling function.
 newtype Prob m a = Prob { sample :: Gen (PrimState m) -> m a }
 
-samples :: PrimMonad m => Prob m a -> Int -> Gen (PrimState m) -> m [a]
-samples model n gen = replicateM n (sample model gen)
+-- | Sample from a model 'n' times.
+samples :: PrimMonad m => Int -> Prob m a -> Gen (PrimState m) -> m [a]
+samples n model gen = replicateM n (sample model gen)
 
 instance Monad m => Functor (Prob m) where
   fmap h (Prob f) = Prob $ liftM h . f
@@ -127,13 +128,13 @@ multinomial n ps = do
     let Just g = findIndex (> z) cumulative
     return g
 
-t :: PrimMonad m => Double -> Double -> Double -> Prob m Double
-t m s k = do
+student :: PrimMonad m => Double -> Double -> Double -> Prob m Double
+student m s k = do
   sd <- sqrt <$> inverseGamma (k / 2) (s * 2 / k)
   normal m sd
 
 isoGauss :: PrimMonad m => [Double] -> Double -> Prob m [Double]
-isoGauss ms sd = mapM (\m -> normal m sd) ms
+isoGauss ms sd = mapM (`normal` sd) ms
 
 poisson :: PrimMonad m => Double -> Prob m Int
 poisson l = Prob $ genFromTable table where
