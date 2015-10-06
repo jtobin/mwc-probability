@@ -1,22 +1,22 @@
-# mwc-probability 
+# mwc-probability [![Build Status](https://secure.travis-ci.org/jtobin/mwc-probability.png)](http://travis-ci.org/jtobin/mwc-probability)
 
 Sampling function-based probability distributions.
 
 A simple probability distribution type, where distributions are characterized
 by sampling functions.
- 
+
 This implementation is a thin layer over `mwc-random`, which handles RNG
 state-passing automatically by using a `PrimMonad` like `IO` or `ST s` under
 the hood.
- 
+
 Includes Functor, Applicative, Monad, and MonadTrans instances.
- 
+
 Examples
 --------
- 
+
 Transform a distribution's support while leaving its density structure
 invariant:
- 
+
     -- uniform over [0, 1] to uniform over [1, 2]
     succ <$> uniform
 
