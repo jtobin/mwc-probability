@@ -22,17 +22,17 @@ invariant:
 
 Sequence distributions together using bind:
 
-    > -- a beta-binomial conjugate distribution
-    > beta 1 10 >>= binomial 10
+    -- a beta-binomial composite distribution
+    beta 1 10 >>= binomial 10
 
 Use do-notation to build complex joint distributions from composable,
 local conditionals:
 
-    > hierarchicalModel = do
-    >   [c, d, e, f] <- replicateM 4 $ uniformR (1, 10)
-    >   a <- gamma c d
-    >   b <- gamma e f
-    >   p <- beta a b
-    >   n <- uniformR (5, 10)
-    >   binomial n p
+    hierarchicalModel = do
+      [c, d, e, f] <- replicateM 4 $ uniformR (1, 10)
+      a <- gamma c d
+      b <- gamma e f
+      p <- beta a b
+      n <- uniformR (5, 10)
+      binomial n p
 
