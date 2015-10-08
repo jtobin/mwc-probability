@@ -1,4 +1,7 @@
-# mwc-probability [![Build Status](https://secure.travis-ci.org/jtobin/mwc-probability.png)](http://travis-ci.org/jtobin/mwc-probability)
+# mwc-probability
+
+[![Build Status](https://secure.travis-ci.org/jtobin/mwc-probability.png)](http://travis-ci.org/jtobin/mwc-probability)
+[![Hackage Version](https://img.shields.io/hackage/v/mwc-probability.svg)](http://hackage.haskell.org/package/mwc-probability)
 
 Sampling function-based probability distributions.
 
