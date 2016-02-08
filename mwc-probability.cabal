@@ -1,5 +1,5 @@
 name:                mwc-probability
-version:             1.0.2
+version:             1.0.3
 homepage:            http://github.com/jtobin/mwc-probability
 license:             MIT
 license-file:        LICENSE
@@ -54,7 +54,7 @@ library
   hs-source-dirs:      src
   build-depends:
       base          <  5
-    , mwc-random    >= 0.13 && < 0.14
+    , mwc-random
     , primitive
     , transformers
 

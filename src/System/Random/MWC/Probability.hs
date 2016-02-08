@@ -93,6 +93,7 @@ newtype Prob m a = Prob { sample :: Gen (PrimState m) -> m a }
 -- [0.6738707766845254,0.9730405951541817]
 samples :: PrimMonad m => Int -> Prob m a -> Gen (PrimState m) -> m [a]
 samples n model gen = replicateM n (sample model gen)
+{-# INLINABLE samples #-}
 
 instance Monad m => Functor (Prob m) where
   fmap h (Prob f) = Prob $ liftM h . f
@@ -114,6 +115,7 @@ instance Monad m => Monad (Prob m) where
   m >>= h = Prob $ \g -> do
     z <- sample m g
     sample (h z) g
+  {-# INLINABLE (>>=) #-}
 
 instance MonadTrans Prob where
   lift m = Prob $ const m
@@ -121,44 +123,55 @@ instance MonadTrans Prob where
 -- | The uniform distribution.
 uniform :: (PrimMonad m, Variate a) => Prob m a
 uniform = Prob QMWC.uniform
+{-# INLINABLE uniform #-}
 
 -- | The uniform distribution over the provided interval.
 uniformR :: (PrimMonad m, Variate a) => (a, a) -> Prob m a
 uniformR r = Prob $ QMWC.uniformR r
+{-# INLINABLE uniformR #-}
 
 -- | The discrete uniform distribution.
 discreteUniform :: PrimMonad m => [a] -> Prob m a
 discreteUniform cs = do
   j <- uniformR (0, length cs - 1)
   return $ cs !! j
+{-# INLINABLE discreteUniform #-}
 
 -- | The standard normal distribution (a Gaussian with mean 0 and variance 1).
 standard :: PrimMonad m => Prob m Double
 standard = Prob MWC.Dist.standard
+{-# INLINABLE standard #-}
 
--- | The normal or Gaussian distribution.
+-- | The normal or Gaussian distribution with a specified mean and standard
+--   deviation.
 normal :: PrimMonad m => Double -> Double -> Prob m Double
 normal m sd = Prob $ MWC.Dist.normal m sd
+{-# INLINABLE normal #-}
 
--- | The log-normal distribution.
+-- | The log-normal distribution with specified mean and standard deviation.
 logNormal :: PrimMonad m => Double -> Double -> Prob m Double
 logNormal m sd = exp <$> normal m sd
+{-# INLINABLE logNormal #-}
 
 -- | The exponential distribution.
 exponential :: PrimMonad m => Double -> Prob m Double
 exponential r = Prob $ MWC.Dist.exponential r
+{-# INLINABLE exponential #-}
 
 -- | The gamma distribution.
 gamma :: PrimMonad m => Double -> Double -> Prob m Double
 gamma a b = Prob $ MWC.Dist.gamma a b
+{-# INLINABLE gamma #-}
 
 -- | The inverse-gamma distribution.
 inverseGamma :: PrimMonad m => Double -> Double -> Prob m Double
 inverseGamma a b = recip <$> gamma a b
+{-# INLINABLE inverseGamma #-}
 
 -- | The chi-square distribution.
 chiSquare :: PrimMonad m => Int -> Prob m Double
 chiSquare k = Prob $ MWC.Dist.chiSquare k
+{-# INLINABLE chiSquare #-}
 
 -- | The beta distribution.
 beta :: PrimMonad m => Double -> Double -> Prob m Double
@@ -166,25 +179,30 @@ beta a b = do
   u <- gamma a 1
   w <- gamma b 1
   return $ u / (u + w)
+{-# INLINABLE beta #-}
 
 -- | The Dirichlet distribution.
 dirichlet :: PrimMonad m => [Double] -> Prob m [Double]
 dirichlet as = do
   zs <- mapM (`gamma` 1) as
   return $ map (/ sum zs) zs
+{-# INLINABLE dirichlet #-}
 
 -- | The symmetric Dirichlet distribution (with equal concentration
 --   parameters).
 symmetricDirichlet :: PrimMonad m => Int -> Double -> Prob m [Double]
 symmetricDirichlet n a = dirichlet (replicate n a)
+{-# INLINABLE symmetricDirichlet #-}
 
 -- | The Bernoulli distribution.
 bernoulli :: PrimMonad m => Double -> Prob m Bool
 bernoulli p = (< p) <$> uniform
+{-# INLINABLE bernoulli #-}
 
 -- | The binomial distribution.
 binomial :: PrimMonad m => Int -> Double -> Prob m Int
 binomial n p = liftM (length . filter id) $ replicateM n (bernoulli p)
+{-# INLINABLE binomial #-}
 
 -- | The multinomial distribution.
 multinomial :: PrimMonad m => Int -> [Double] -> Prob m [Int]
@@ -194,21 +212,25 @@ multinomial n ps = do
     z <- uniform
     let Just g = findIndex (> z) cumulative
     return g
+{-# INLINABLE multinomial #-}
 
 -- | Student's t distribution.
 student :: PrimMonad m => Double -> Double -> Double -> Prob m Double
 student m s k = do
   sd <- sqrt <$> inverseGamma (k / 2) (s * 2 / k)
   normal m sd
+{-# INLINABLE student #-}
 
 -- | An isotropic or spherical Gaussian distribution.
 isoGauss :: PrimMonad m => [Double] -> Double -> Prob m [Double]
 isoGauss ms sd = mapM (`normal` sd) ms
+{-# INLINABLE isoGauss #-}
 
 -- | The Poisson distribution.
 poisson :: PrimMonad m => Double -> Prob m Int
 poisson l = Prob $ genFromTable table where
   table = tablePoisson l
+{-# INLINABLE poisson #-}
 
 -- | A categorical distribution defined by the supplied list of probabilities.
 categorical :: PrimMonad m => [Double] -> Prob m Int
@@ -217,4 +239,5 @@ categorical ps = do
   case xs of
     [x] -> return x
     _   -> error "categorical: invalid return value"
+{-# INLINABLE categorical #-}
 
