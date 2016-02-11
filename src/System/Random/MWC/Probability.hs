@@ -126,9 +126,9 @@ instance MonadIO m => MonadIO (Prob m) where
   liftIO m = Prob $ const (liftIO m)
 
 instance PrimMonad m => PrimMonad (Prob m) where
-    type PrimState (Prob m) = PrimState m
-    primitive = lift . primitive
-    {-# INLINE primitive #-}
+  type PrimState (Prob m) = PrimState m
+  primitive = lift . primitive
+  {-# INLINE primitive #-}
 
 -- | The uniform distribution.
 uniform :: (PrimMonad m, Variate a) => Prob m a
