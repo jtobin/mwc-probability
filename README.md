@@ -12,8 +12,6 @@ This implementation is a thin layer over `mwc-random`, which handles RNG
 state-passing automatically by using a `PrimMonad` like `IO` or `ST s` under
 the hood.
 
-Includes Functor, Applicative, Monad, and MonadTrans instances.
-
 Examples
 --------
 
