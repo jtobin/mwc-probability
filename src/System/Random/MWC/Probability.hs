@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies #-}
 {-# OPTIONS_GHC -Wall #-}
 
 -- |
@@ -73,6 +74,7 @@ module System.Random.MWC.Probability (
 import Control.Applicative
 import Control.Monad
 import Control.Monad.Primitive
+import Control.Monad.IO.Class
 import Control.Monad.Trans.Class
 import Data.List (findIndex)
 import System.Random.MWC as MWC hiding (uniform, uniformR)
@@ -119,6 +121,14 @@ instance Monad m => Monad (Prob m) where
 
 instance MonadTrans Prob where
   lift m = Prob $ const m
+
+instance MonadIO m => MonadIO (Prob m) where
+  liftIO m = Prob $ const (liftIO m)
+
+instance PrimMonad m => PrimMonad (Prob m) where
+  type PrimState (Prob m) = PrimState m
+  primitive = lift . primitive
+  {-# INLINE primitive #-}
 
 -- | The uniform distribution.
 uniform :: (PrimMonad m, Variate a) => Prob m a
