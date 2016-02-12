@@ -18,8 +18,6 @@ description:
   state-passing automatically by using a @PrimMonad@ like @IO@ or @ST s@ under
   the hood.
   .
-  Includes Functor, Applicative, Monad, and MonadTrans instances.
-  .
   /Examples/
   .
   Transform a distribution's support while leaving its density structure
