@@ -1,4 +1,5 @@
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE CPP #-}
 {-# OPTIONS_GHC -Wall #-}
 
 -- |
