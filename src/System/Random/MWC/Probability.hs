@@ -76,6 +76,9 @@ import Control.Monad
 import Control.Monad.Primitive
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Class
+#if __GLASGOW_HASKELL__ < 710
+import Data.Foldable (Foldable)
+#endif
 import qualified Data.Foldable as F
 import Data.List (findIndex)
 import System.Random.MWC as MWC hiding (uniform, uniformR)
