@@ -76,6 +76,7 @@ import Control.Monad
 import Control.Monad.Primitive
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Class
+import qualified Data.Foldable as F
 import Data.List (findIndex)
 import System.Random.MWC as MWC hiding (uniform, uniformR)
 import qualified System.Random.MWC as QMWC
@@ -141,10 +142,10 @@ uniformR r = Prob $ QMWC.uniformR r
 {-# INLINABLE uniformR #-}
 
 -- | The discrete uniform distribution.
-discreteUniform :: PrimMonad m => [a] -> Prob m a
+discreteUniform :: (PrimMonad m, Foldable f) => f a -> Prob m a
 discreteUniform cs = do
   j <- uniformR (0, length cs - 1)
-  return $ cs !! j
+  return $ F.toList cs !! j
 {-# INLINABLE discreteUniform #-}
 
 -- | The standard normal distribution (a Gaussian with mean 0 and variance 1).
@@ -192,10 +193,11 @@ beta a b = do
 {-# INLINABLE beta #-}
 
 -- | The Dirichlet distribution.
-dirichlet :: PrimMonad m => [Double] -> Prob m [Double]
+dirichlet
+  :: (Foldable f, PrimMonad m) => f Double -> Prob m [Double]
 dirichlet as = do
-  zs <- mapM (`gamma` 1) as
-  return $ map (/ sum zs) zs
+  zs <- mapM (`gamma` 1) (F.toList as)
+  return $ fmap (/ sum zs) zs
 {-# INLINABLE dirichlet #-}
 
 -- | The symmetric Dirichlet distribution (with equal concentration
@@ -215,9 +217,9 @@ binomial n p = liftM (length . filter id) $ replicateM n (bernoulli p)
 {-# INLINABLE binomial #-}
 
 -- | The multinomial distribution.
-multinomial :: PrimMonad m => Int -> [Double] -> Prob m [Int]
+multinomial :: (Foldable f, PrimMonad m) => Int -> f Double -> Prob m [Int]
 multinomial n ps = do
-  let cumulative = scanl1 (+) ps
+  let cumulative = scanl1 (+) (F.toList ps)
   replicateM n $ do
     z <- uniform
     let Just g = findIndex (> z) cumulative
@@ -232,8 +234,8 @@ student m s k = do
 {-# INLINABLE student #-}
 
 -- | An isotropic or spherical Gaussian distribution.
-isoGauss :: PrimMonad m => [Double] -> Double -> Prob m [Double]
-isoGauss ms sd = mapM (`normal` sd) ms
+isoGauss :: (Foldable f, PrimMonad m) => f Double -> Double -> Prob m [Double]
+isoGauss ms sd = mapM (`normal` sd) (F.toList ms)
 {-# INLINABLE isoGauss #-}
 
 -- | The Poisson distribution.
@@ -243,7 +245,7 @@ poisson l = Prob $ genFromTable table where
 {-# INLINABLE poisson #-}
 
 -- | A categorical distribution defined by the supplied list of probabilities.
-categorical :: PrimMonad m => [Double] -> Prob m Int
+categorical :: (Foldable f, PrimMonad m) => f Double -> Prob m Int
 categorical ps = do
   xs <- multinomial 1 ps
   case xs of
