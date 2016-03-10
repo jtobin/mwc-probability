@@ -2,6 +2,7 @@
 
 [![Build Status](https://secure.travis-ci.org/jtobin/mwc-probability.png)](http://travis-ci.org/jtobin/mwc-probability)
 [![Hackage Version](https://img.shields.io/hackage/v/mwc-probability.svg)](http://hackage.haskell.org/package/mwc-probability)
+[![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/jtobin/mwc-probability/blob/master/LICENSE)
 
 Sampling function-based probability distributions.
 
