@@ -103,13 +103,13 @@ samples n model gen = replicateM n (sample model gen)
 {-# INLINABLE samples #-}
 
 instance Monad m => Functor (Prob m) where
-  fmap h (Prob f) = Prob $ liftM h . f
+  fmap h (Prob f) = Prob $ fmap h . f
 
 instance Monad m => Applicative (Prob m) where
   pure  = return
   (<*>) = ap
 
-instance (Applicative m, Monad m, Num a) => Num (Prob m a) where
+instance (Monad m, Num a) => Num (Prob m a) where
   (+)         = liftA2 (+)
   (-)         = liftA2 (-)
   (*)         = liftA2 (*)
@@ -135,24 +135,39 @@ instance PrimMonad m => PrimMonad (Prob m) where
   primitive = lift . primitive
   {-# INLINE primitive #-}
 
--- | The uniform distribution.
+-- | The uniform distribution over a type.
+--
+--   >>> gen <- create
+--   >>> sample uniform gen :: IO Double
+--   0.29308497534914946
+--   >>> sample uniform gen :: IO Bool
+--   False
 uniform :: (PrimMonad m, Variate a) => Prob m a
 uniform = Prob QMWC.uniform
 {-# INLINABLE uniform #-}
 
 -- | The uniform distribution over the provided interval.
+--
+--   >>> sample (uniformR (0, 1)) gen
+--   0.44984153252922365
 uniformR :: (PrimMonad m, Variate a) => (a, a) -> Prob m a
 uniformR r = Prob $ QMWC.uniformR r
 {-# INLINABLE uniformR #-}
 
 -- | The discrete uniform distribution.
+--
+--   >>> sample (discreteUniform [0..10]) gen
+--   6
+--   >>> sample (discreteUniform "abcdefghijklmnopqrstuvwxyz") gen
+--   'a'
 discreteUniform :: (PrimMonad m, Foldable f) => f a -> Prob m a
 discreteUniform cs = do
   j <- uniformR (0, length cs - 1)
   return $ F.toList cs !! j
 {-# INLINABLE discreteUniform #-}
 
--- | The standard normal distribution (a Gaussian with mean 0 and variance 1).
+-- | The standard normal or Gaussian distribution (with mean 0 and standard
+--   deviation 1).
 standard :: PrimMonad m => Prob m Double
 standard = Prob MWC.Dist.standard
 {-# INLINABLE standard #-}
@@ -168,12 +183,18 @@ logNormal :: PrimMonad m => Double -> Double -> Prob m Double
 logNormal m sd = exp <$> normal m sd
 {-# INLINABLE logNormal #-}
 
--- | The exponential distribution.
+-- | The exponential distribution with provided rate parameter.
 exponential :: PrimMonad m => Double -> Prob m Double
 exponential r = Prob $ MWC.Dist.exponential r
 {-# INLINABLE exponential #-}
 
--- | The gamma distribution.
+-- | The gamma distribution with shape parameter a and scale parameter b.
+--
+--   This is the parameterization used more traditionally in frequentist
+--   statistics.  It has the following corresponding probability density
+--   function:
+--
+--   f(x; a, b) = 1 / (Gamma(a) * b ^ a) x ^ (a - 1) e ^ (- x / b)
 gamma :: PrimMonad m => Double -> Double -> Prob m Double
 gamma a b = Prob $ MWC.Dist.gamma a b
 {-# INLINABLE gamma #-}
@@ -204,8 +225,7 @@ dirichlet as = do
   return $ fmap (/ sum zs) zs
 {-# INLINABLE dirichlet #-}
 
--- | The symmetric Dirichlet distribution (with equal concentration
---   parameters).
+-- | The symmetric Dirichlet distribution of dimension n.
 symmetricDirichlet :: PrimMonad m => Int -> Double -> Prob m [Double]
 symmetricDirichlet n a = dirichlet (replicate n a)
 {-# INLINABLE symmetricDirichlet #-}
@@ -217,7 +237,7 @@ bernoulli p = (< p) <$> uniform
 
 -- | The binomial distribution.
 binomial :: PrimMonad m => Int -> Double -> Prob m Int
-binomial n p = liftM (length . filter id) $ replicateM n (bernoulli p)
+binomial n p = fmap (length . filter id) $ replicateM n (bernoulli p)
 {-# INLINABLE binomial #-}
 
 -- | The multinomial distribution.
