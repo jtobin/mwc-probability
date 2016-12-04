@@ -219,9 +219,9 @@ beta a b = do
 
 -- | The Dirichlet distribution.
 dirichlet
-  :: (Foldable f, PrimMonad m) => f Double -> Prob m [Double]
+  :: (Traversable f, PrimMonad m) => f Double -> Prob m (f Double)
 dirichlet as = do
-  zs <- mapM (`gamma` 1) (F.toList as)
+  zs <- traverse (`gamma` 1) as
   return $ fmap (/ sum zs) zs
 {-# INLINABLE dirichlet #-}
 
@@ -258,8 +258,9 @@ student m s k = do
 {-# INLINABLE student #-}
 
 -- | An isotropic or spherical Gaussian distribution.
-isoGauss :: (Foldable f, PrimMonad m) => f Double -> Double -> Prob m [Double]
-isoGauss ms sd = mapM (`normal` sd) (F.toList ms)
+isoGauss
+  :: (Traversable f, PrimMonad m) => f Double -> Double -> Prob m (f Double)
+isoGauss ms sd = traverse (`normal` sd) ms
 {-# INLINABLE isoGauss #-}
 
 -- | The Poisson distribution.
