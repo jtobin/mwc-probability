@@ -103,7 +103,7 @@ samples n model gen = replicateM n (sample model gen)
 {-# INLINABLE samples #-}
 
 instance Monad m => Functor (Prob m) where
-  fmap h (Prob f) = Prob $ fmap h . f
+  fmap h (Prob f) = Prob (\x -> fmap h (f x))
 
 instance Monad m => Applicative (Prob m) where
   pure  = return
@@ -118,8 +118,8 @@ instance (Monad m, Num a) => Num (Prob m a) where
   fromInteger = pure . fromInteger
 
 instance Monad m => Monad (Prob m) where
-  return  = Prob . const . return
-  m >>= h = Prob $ \g -> do
+  return x = Prob (const (return x))
+  m >>= h  = Prob $ \g -> do
     z <- sample m g
     sample (h z) g
   {-# INLINABLE (>>=) #-}
