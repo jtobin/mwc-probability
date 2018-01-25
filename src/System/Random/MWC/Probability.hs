@@ -58,6 +58,7 @@ module System.Random.MWC.Probability (
   , normal
   , logNormal
   , exponential
+  , laplace
   , gamma
   , inverseGamma
   , chiSquare
@@ -187,6 +188,14 @@ logNormal m sd = exp <$> normal m sd
 exponential :: PrimMonad m => Double -> Prob m Double
 exponential r = Prob $ MWC.Dist.exponential r
 {-# INLINABLE exponential #-}
+
+-- | The Laplace distribution with provided location and scale parameters.
+laplace :: (Floating a, Variate a, PrimMonad m) => a -> a -> Prob m a
+laplace mu sigma = do
+  u <- uniformR (-0.5, 0.5)
+  let b = sigma / sqrt 2
+  return $ mu - b * signum u * log (1 - 2 * abs u)
+
 
 -- | The gamma distribution with shape parameter a and scale parameter b.
 --
