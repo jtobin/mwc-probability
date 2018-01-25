@@ -195,6 +195,7 @@ laplace mu sigma = do
   u <- uniformR (-0.5, 0.5)
   let b = sigma / sqrt 2
   return $ mu - b * signum u * log (1 - 2 * abs u)
+{-# INLINABLE laplace #-}  
 
 
 -- | The gamma distribution with shape parameter a and scale parameter b.
