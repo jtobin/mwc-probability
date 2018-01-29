@@ -50,12 +50,13 @@ module System.Random.MWC.Probability (
   , Prob(..)
   , samples
 
+  -- * Distributions
+  -- ** Continuous-valued
   , uniform
   , uniformR
-  , discreteUniform
-  , categorical
-  , standard
   , normal
+  , standardNormal
+  , isoNormal    
   , logNormal
   , exponential
   , laplace
@@ -63,14 +64,20 @@ module System.Random.MWC.Probability (
   , inverseGamma
   , chiSquare
   , beta
-  , dirichlet
-  , symmetricDirichlet
+  , student
+
+  -- ** Discrete-valued
+  , discreteUniform
+  , zipf
+  , categorical
   , bernoulli
   , binomial
   , multinomial
-  , student
-  , isoGauss
-  , poisson
+  , poisson  
+  -- ** Dirichlet process
+  , dirichlet
+  , symmetricDirichlet
+
   ) where
 
 import Control.Applicative
@@ -169,9 +176,9 @@ discreteUniform cs = do
 
 -- | The standard normal or Gaussian distribution (with mean 0 and standard
 --   deviation 1).
-standard :: PrimMonad m => Prob m Double
-standard = Prob MWC.Dist.standard
-{-# INLINABLE standard #-}
+standardNormal :: PrimMonad m => Prob m Double
+standardNormal = Prob MWC.Dist.standard
+{-# INLINABLE standardNormal #-}
 
 -- | The normal or Gaussian distribution with a specified mean and standard
 --   deviation.
@@ -267,11 +274,11 @@ student m s k = do
   normal m sd
 {-# INLINABLE student #-}
 
--- | An isotropic or spherical Gaussian distribution.
-isoGauss
+-- | An isotropic or spherical Gaussian distribution with specified mean vector and scalar standard deviation parameter.
+isoNormal
   :: (Traversable f, PrimMonad m) => f Double -> Double -> Prob m (f Double)
-isoGauss ms sd = traverse (`normal` sd) ms
-{-# INLINABLE isoGauss #-}
+isoNormal ms sd = traverse (`normal` sd) ms
+{-# INLINABLE isoNormal #-}
 
 -- | The Poisson distribution.
 poisson :: PrimMonad m => Double -> Prob m Int
@@ -288,3 +295,19 @@ categorical ps = do
     _   -> error "categorical: invalid return value"
 {-# INLINABLE categorical #-}
 
+
+-- | The Zipf distribution, generated with the rejection sampling algorithm X.6.1 shown in L.Devroye, Non-Uniform Random Variate Generation.
+zipf :: (Floating b, PrimMonad m, Variate b, Integral a, RealFrac b) => a -> Prob m b
+zipf a' = do
+  let
+    a = fromIntegral a'
+    b = 2**(a - 1)
+    go = do
+        u <- uniform
+        v <- uniform
+        let x = fromIntegral (floor (u**(-1/(a-1))) :: Int)
+            t = (1 + 1/x)**(a-1)
+        if v*x*(t-1)/(b-1) <= t/b
+          then return x else go
+  go
+{-# INLINABLE zipf #-}  
