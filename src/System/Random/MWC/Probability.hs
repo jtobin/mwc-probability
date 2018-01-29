@@ -321,7 +321,7 @@ zipf a = do
         v <- uniform
         let xInt = floor (u ** (- 1 / (a - 1))) 
             x = fromIntegral xInt
-            t = (1 + 1 / x) ** (a-1)
+            t = (1 + 1 / x) ** (a - 1)
         if v * x * (t - 1) / (b - 1) <= t / b
           then return xInt
           else go
