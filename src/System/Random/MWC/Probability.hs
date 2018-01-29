@@ -276,7 +276,8 @@ student m s k = do
   normal m sd
 {-# INLINABLE student #-}
 
--- | An isotropic or spherical Gaussian distribution with specified mean vector and scalar standard deviation parameter.
+-- | An isotropic or spherical Gaussian distribution with specified mean
+-- vector and scalar standard deviation parameter.
 isoNormal
   :: (Traversable f, PrimMonad m) => f Double -> Double -> Prob m (f Double)
 isoNormal ms sd = traverse (`normal` sd) ms
@@ -298,9 +299,13 @@ categorical ps = do
 {-# INLINABLE categorical #-}
 
 
--- | The Zipf-Mandelbrot distribution, generated with the rejection sampling algorithm X.6.1 shown in L.Devroye, Non-Uniform Random Variate Generation.
+-- | The Zipf-Mandelbrot distribution, generated with the rejection
+-- sampling algorithm X.6.1 shown in
+-- L.Devroye, Non-Uniform Random Variate Generation.
 --
--- The parameter should be positive, but values close to 1 should be avoided as they are very computationally intensive. The following code illustrates this behaviour.
+-- The parameter should be positive, but values close to 1 should be
+-- avoided as they are very computationally intensive. The following
+-- code illustrates this behaviour.
 -- 
 -- >>> create >>= samples 10 (zipf 1.1)
 -- [11315371987423520,2746946,653,609,2,13,85,4,256184577853,50]
