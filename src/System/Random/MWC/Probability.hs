@@ -297,6 +297,14 @@ categorical ps = do
 
 
 -- | The Zipf-Mandelbrot distribution, generated with the rejection sampling algorithm X.6.1 shown in L.Devroye, Non-Uniform Random Variate Generation.
+--
+-- The parameter should be positive, but values close to 1 should be avoided as they are very computationally intensive. The following code illustrates this behaviour.
+-- 
+-- >>> create >>= samples 10 (zipf 1.1)
+-- [11315371987423520,2746946,653,609,2,13,85,4,256184577853,50]
+-- 
+-- >>> create >>= samples 10 (zipf 1.5)
+-- [19,3,3,1,1,2,1,191,2,1]
 zipf :: (PrimMonad m, Integral b) => Double -> Prob m b
 zipf a = do
   let
