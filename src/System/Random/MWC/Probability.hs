@@ -65,7 +65,9 @@ module System.Random.MWC.Probability (
   , chiSquare
   , beta
   , student
-
+  -- *** Dirichlet process
+  , dirichlet
+  , symmetricDirichlet  
   -- ** Discrete-valued
   , discreteUniform
   , zipf
@@ -74,9 +76,7 @@ module System.Random.MWC.Probability (
   , binomial
   , multinomial
   , poisson  
-  -- ** Dirichlet process
-  , dirichlet
-  , symmetricDirichlet
+
 
   ) where
 
@@ -296,18 +296,18 @@ categorical ps = do
 {-# INLINABLE categorical #-}
 
 
--- | The Zipf distribution, generated with the rejection sampling algorithm X.6.1 shown in L.Devroye, Non-Uniform Random Variate Generation.
-zipf :: (Floating b, PrimMonad m, Variate b, Integral a, RealFrac b) => a -> Prob m b
-zipf a' = do
+-- | The Zipf-Mandelbrot distribution, generated with the rejection sampling algorithm X.6.1 shown in L.Devroye, Non-Uniform Random Variate Generation.
+zipf :: (PrimMonad m, Integral b) => Double -> Prob m b
+zipf a = do
   let
-    a = fromIntegral a'
     b = 2**(a - 1)
     go = do
         u <- uniform
         v <- uniform
-        let x = fromIntegral (floor (u**(-1/(a-1))) :: Int)
+        let xInt = floor (u**(-1/(a-1))) 
+            x = fromIntegral xInt
             t = (1 + 1/x)**(a-1)
         if v*x*(t-1)/(b-1) <= t/b
-          then return x else go
+          then return xInt else go
   go
 {-# INLINABLE zipf #-}  
