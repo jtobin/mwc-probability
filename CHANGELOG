@@ -1,6 +1,6 @@
 # Changelog
 
-	- 1.4.0 (2018-01-29)
+	- 2.0.0 (2018-01-29)
 	* Add Laplace and Zipf distribution
 	* Divide Haddock in sections
 	* Rename `isoGauss` to `isoNormal` and `standard` to `standardNormal` to uniform naming scheme

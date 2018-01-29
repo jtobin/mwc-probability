@@ -104,18 +104,25 @@ newtype Prob m a = Prob { sample :: Gen (PrimState m) -> m a }
 
 -- | Sample from a model 'n' times.
 --
--- >>> samples 2 uniform gen
+-- >>> create >>= samples 2 uniform
 -- [0.6738707766845254,0.9730405951541817]
 samples :: PrimMonad m => Int -> Prob m a -> Gen (PrimState m) -> m [a]
 samples n model gen = replicateM n (sample model gen)
 {-# INLINABLE samples #-}
 
-instance Monad m => Functor (Prob m) where
-  fmap h (Prob f) = Prob (\x -> fmap h (f x))
+instance Functor m => Functor (Prob m) where
+  fmap h (Prob f) = Prob (fmap h . f)
 
 instance Monad m => Applicative (Prob m) where
-  pure  = return
+  pure  = Prob . const . pure
   (<*>) = ap
+
+instance Monad m => Monad (Prob m) where
+  return = pure
+  m >>= h = Prob $ \g -> do
+    z <- sample m g
+    sample (h z) g
+  {-# INLINABLE (>>=) #-}
 
 instance (Monad m, Num a) => Num (Prob m a) where
   (+)         = liftA2 (+)
@@ -125,12 +132,7 @@ instance (Monad m, Num a) => Num (Prob m a) where
   signum      = fmap signum
   fromInteger = pure . fromInteger
 
-instance Monad m => Monad (Prob m) where
-  return x = Prob (const (return x))
-  m >>= h  = Prob $ \g -> do
-    z <- sample m g
-    sample (h z) g
-  {-# INLINABLE (>>=) #-}
+
 
 instance MonadTrans Prob where
   lift m = Prob $ const m
@@ -308,14 +310,15 @@ categorical ps = do
 zipf :: (PrimMonad m, Integral b) => Double -> Prob m b
 zipf a = do
   let
-    b = 2**(a - 1)
+    b = 2 ** (a - 1)
     go = do
         u <- uniform
         v <- uniform
-        let xInt = floor (u**(-1/(a-1))) 
+        let xInt = floor (u ** (- 1 / (a - 1))) 
             x = fromIntegral xInt
-            t = (1 + 1/x)**(a-1)
-        if v*x*(t-1)/(b-1) <= t/b
-          then return xInt else go
+            t = (1 + 1 / x) ** (a-1)
+        if v * x * (t - 1) / (b - 1) <= t / b
+          then return xInt
+          else go
   go
 {-# INLINABLE zipf #-}  
