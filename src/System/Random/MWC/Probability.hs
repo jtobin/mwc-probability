@@ -50,12 +50,13 @@ module System.Random.MWC.Probability (
   , Prob(..)
   , samples
 
+  -- * Distributions
+  -- ** Continuous-valued
   , uniform
   , uniformR
-  , discreteUniform
-  , categorical
-  , standard
   , normal
+  , standardNormal
+  , isoNormal    
   , logNormal
   , exponential
   , laplace
@@ -63,14 +64,20 @@ module System.Random.MWC.Probability (
   , inverseGamma
   , chiSquare
   , beta
+  , student
+  -- *** Dirichlet process
   , dirichlet
-  , symmetricDirichlet
+  , symmetricDirichlet  
+  -- ** Discrete-valued
+  , discreteUniform
+  , zipf
+  , categorical
   , bernoulli
   , binomial
   , multinomial
-  , student
-  , isoGauss
-  , poisson
+  , poisson  
+
+
   ) where
 
 import Control.Applicative
@@ -97,18 +104,25 @@ newtype Prob m a = Prob { sample :: Gen (PrimState m) -> m a }
 
 -- | Sample from a model 'n' times.
 --
--- >>> samples 2 uniform gen
+-- >>> create >>= samples 2 uniform
 -- [0.6738707766845254,0.9730405951541817]
 samples :: PrimMonad m => Int -> Prob m a -> Gen (PrimState m) -> m [a]
 samples n model gen = replicateM n (sample model gen)
 {-# INLINABLE samples #-}
 
-instance Monad m => Functor (Prob m) where
-  fmap h (Prob f) = Prob (\x -> fmap h (f x))
+instance Functor m => Functor (Prob m) where
+  fmap h (Prob f) = Prob (fmap h . f)
 
 instance Monad m => Applicative (Prob m) where
-  pure  = return
+  pure  = Prob . const . pure
   (<*>) = ap
+
+instance Monad m => Monad (Prob m) where
+  return = pure
+  m >>= h = Prob $ \g -> do
+    z <- sample m g
+    sample (h z) g
+  {-# INLINABLE (>>=) #-}
 
 instance (Monad m, Num a) => Num (Prob m a) where
   (+)         = liftA2 (+)
@@ -118,12 +132,7 @@ instance (Monad m, Num a) => Num (Prob m a) where
   signum      = fmap signum
   fromInteger = pure . fromInteger
 
-instance Monad m => Monad (Prob m) where
-  return x = Prob (const (return x))
-  m >>= h  = Prob $ \g -> do
-    z <- sample m g
-    sample (h z) g
-  {-# INLINABLE (>>=) #-}
+
 
 instance MonadTrans Prob where
   lift m = Prob $ const m
@@ -169,9 +178,9 @@ discreteUniform cs = do
 
 -- | The standard normal or Gaussian distribution (with mean 0 and standard
 --   deviation 1).
-standard :: PrimMonad m => Prob m Double
-standard = Prob MWC.Dist.standard
-{-# INLINABLE standard #-}
+standardNormal :: PrimMonad m => Prob m Double
+standardNormal = Prob MWC.Dist.standard
+{-# INLINABLE standardNormal #-}
 
 -- | The normal or Gaussian distribution with a specified mean and standard
 --   deviation.
@@ -267,11 +276,12 @@ student m s k = do
   normal m sd
 {-# INLINABLE student #-}
 
--- | An isotropic or spherical Gaussian distribution.
-isoGauss
+-- | An isotropic or spherical Gaussian distribution with specified mean
+-- vector and scalar standard deviation parameter.
+isoNormal
   :: (Traversable f, PrimMonad m) => f Double -> Double -> Prob m (f Double)
-isoGauss ms sd = traverse (`normal` sd) ms
-{-# INLINABLE isoGauss #-}
+isoNormal ms sd = traverse (`normal` sd) ms
+{-# INLINABLE isoNormal #-}
 
 -- | The Poisson distribution.
 poisson :: PrimMonad m => Double -> Prob m Int
@@ -288,3 +298,32 @@ categorical ps = do
     _   -> error "categorical: invalid return value"
 {-# INLINABLE categorical #-}
 
+
+-- | The Zipf-Mandelbrot distribution, generated with the rejection
+-- sampling algorithm X.6.1 shown in
+-- L.Devroye, Non-Uniform Random Variate Generation.
+--
+-- The parameter should be positive, but values close to 1 should be
+-- avoided as they are very computationally intensive. The following
+-- code illustrates this behaviour.
+-- 
+-- >>> create >>= samples 10 (zipf 1.1)
+-- [11315371987423520,2746946,653,609,2,13,85,4,256184577853,50]
+-- 
+-- >>> create >>= samples 10 (zipf 1.5)
+-- [19,3,3,1,1,2,1,191,2,1]
+zipf :: (PrimMonad m, Integral b) => Double -> Prob m b
+zipf a = do
+  let
+    b = 2 ** (a - 1)
+    go = do
+        u <- uniform
+        v <- uniform
+        let xInt = floor (u ** (- 1 / (a - 1))) 
+            x = fromIntegral xInt
+            t = (1 + 1 / x) ** (a - 1)
+        if v * x * (t - 1) / (b - 1) <= t / b
+          then return xInt
+          else go
+  go
+{-# INLINABLE zipf #-}  

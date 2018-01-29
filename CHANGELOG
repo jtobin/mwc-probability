@@ -1,6 +1,11 @@
 # Changelog
 
-- 1.3.0 (2016-12-04)
-		* Generalize a couple of samplers to use Traversable rather than lists.
+	- 2.0.0 (2018-01-29)
+	* Add Laplace and Zipf distribution
+	* Divide Haddock in sections
+	* Rename `isoGauss` to `isoNormal` and `standard` to `standardNormal` to uniform naming scheme
+	
+	- 1.3.0 (2016-12-04)
+	* Generalize a couple of samplers to use Traversable rather than lists.
 
 
