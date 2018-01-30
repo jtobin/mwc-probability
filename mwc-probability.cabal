@@ -3,8 +3,8 @@ version:             2.0.0
 homepage:            http://github.com/jtobin/mwc-probability
 license:             MIT
 license-file:        LICENSE
-author:              Jared Tobin
-maintainer:          jared@jtobin.ca
+author:              Jared Tobin, Marco Zocca
+maintainer:          jared@jtobin.ca, zocca.marco gmail
 category:            Math
 build-type:          Simple
 cabal-version:       >= 1.10
