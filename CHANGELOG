@@ -1,4 +1,7 @@
-# Changelog
+	# Changelog
+
+	- 2.0.1 (2018-01-30)
+	* Add Normal-Gamma and Pareto distributions
 
 	- 2.0.0 (2018-01-29)
 	* Add Laplace and Zipf-Mandelbrot distribution

@@ -77,6 +77,7 @@ module System.Random.MWC.Probability (
   , chiSquare
   , beta
   , student
+  , pareto
   -- *** Dirichlet process
   , dirichlet
   , symmetricDirichlet  
@@ -261,6 +262,14 @@ beta a b = do
   w <- gamma b 1
   return $ u / (u + w)
 {-# INLINABLE beta #-}
+
+-- | The Pareto distribution with specified index `a` and minimum `xmin` parameters.
+--
+-- Both `a` and `xmin` must be positive.
+pareto :: PrimMonad m => Double -> Double -> Prob m Double
+pareto a xmin = do
+  y <- exponential a
+  return $ xmin * exp y
 
 -- | The Dirichlet distribution.
 dirichlet
