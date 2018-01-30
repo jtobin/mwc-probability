@@ -270,6 +270,7 @@ pareto :: PrimMonad m => Double -> Double -> Prob m Double
 pareto a xmin = do
   y <- exponential a
   return $ xmin * exp y
+{-# INLINABLE pareto #-}  
 
 -- | The Dirichlet distribution.
 dirichlet
