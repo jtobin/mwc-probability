@@ -53,6 +53,10 @@
 --
 -- which will be reused throughout all examples.
 -- Note: creating a random generator is an expensive operation, so it should be only performed once in the code (usually in the top-level IO action, e.g `main`).
+--
+-- == References
+--
+-- 1) L.Devroye, Non-Uniform Random Variate Generation, Springer-Verlag, New York, 1986. (Made freely available by the author: http://www.nrbook.com/devroye )
 
 
 module System.Random.MWC.Probability (
@@ -297,6 +301,7 @@ binomial n p = fmap (length . filter id) $ replicateM n (bernoulli p)
 {-# INLINABLE binomial #-}
 
 -- | The negative binomial distribution with `n` trials each with "success" probability `p`.
+-- Example X.1.5 in [1].
 --
 -- Note: `n` must be larger than 1 and `p` included between 0 and 1.
 negativeBinomial :: (PrimMonad m, Integral a) => a -> Double -> Prob m Int
@@ -346,8 +351,7 @@ categorical ps = do
 
 
 -- | The Zipf-Mandelbrot distribution, generated with the rejection
--- sampling algorithm X.6.1 shown in
--- L.Devroye, Non-Uniform Random Variate Generation.
+-- sampling algorithm X.6.1 shown in [1].
 --
 -- The parameter should be positive, but values close to 1 should be
 -- avoided as they are very computationally intensive. The following
