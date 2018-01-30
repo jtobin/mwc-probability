@@ -72,6 +72,7 @@ module System.Random.MWC.Probability (
   , laplace
   , gamma
   , inverseGamma
+  , normalGamma
   , weibull
   , chiSquare
   , beta
@@ -221,6 +222,7 @@ weibull :: (Floating a, Variate a, PrimMonad m) => a -> a -> Prob m a
 weibull a b = do
   x <- uniform
   return $ (- 1/a * log (1 - x)) ** 1/b
+{-# INLINABLE weibull #-}
 
 
 -- | The gamma distribution with shape parameter a and scale parameter b.
@@ -238,6 +240,14 @@ gamma a b = Prob $ MWC.Dist.gamma a b
 inverseGamma :: PrimMonad m => Double -> Double -> Prob m Double
 inverseGamma a b = recip <$> gamma a b
 {-# INLINABLE inverseGamma #-}
+
+-- | The Normal-Gamma distribution of parameters mu, lambda, a, b
+normalGamma :: PrimMonad m => Double -> Double -> Double -> Double -> Prob m Double
+normalGamma mu lambda a b = do
+  tau <- gamma a b
+  let xsd = sqrt $ 1 / (lambda * tau)
+  normal mu xsd
+{-# INLINABLE normalGamma #-}
 
 -- | The chi-square distribution.
 chiSquare :: PrimMonad m => Int -> Prob m Double
