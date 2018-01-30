@@ -87,6 +87,7 @@ module System.Random.MWC.Probability (
   , categorical
   , bernoulli
   , binomial
+  , negativeBinomial
   , multinomial
   , poisson  
 
@@ -294,6 +295,15 @@ bernoulli p = (< p) <$> uniform
 binomial :: PrimMonad m => Int -> Double -> Prob m Int
 binomial n p = fmap (length . filter id) $ replicateM n (bernoulli p)
 {-# INLINABLE binomial #-}
+
+-- | The negative binomial distribution with `n` trials each with "success" probability `p`.
+--
+-- Note: `n` must be larger than 1 and `p` included between 0 and 1.
+negativeBinomial :: (PrimMonad m, Integral a) => a -> Double -> Prob m Int
+negativeBinomial n p = do
+  y <- gamma (fromIntegral n) ((1-p) / p)
+  poisson y
+{-# INLINABLE negativeBinomial #-}
 
 -- | The multinomial distribution.
 multinomial :: (Foldable f, PrimMonad m) => Int -> f Double -> Prob m [Int]
