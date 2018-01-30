@@ -4,10 +4,10 @@
 
 -- |
 -- Module: System.Random.MWC.Probability
--- Copyright: (c) 2015 Jared Tobin
+-- Copyright: (c) 2015-2017 Jared Tobin, Marco Zocca
 -- License: MIT
 --
--- Maintainer: Jared Tobin <jared@jtobin.ca>
+-- Maintainer: Jared Tobin <jared@jtobin.ca>, Marco Zocca <zocca.marco gmail>
 -- Stability: unstable
 -- Portability: ghc
 --
@@ -42,8 +42,18 @@
 -- For example, @'uniform'@ is a distribution over the 0-1 interval, but @fmap
 -- (+ 1) uniform@ is the translated distribution over the 1-2 interval.
 --
--- >>> sample (fmap (+ 1) uniform) gen
+-- >>> create >>= sample (fmap (+ 1) uniform)
 -- 1.5480073474340754
+--
+-- == Running the examples
+--
+-- In the following we will assume an interactive GHCi session; the user should first declare a random number generator: 
+--
+-- >>> gen <- create
+--
+-- which will be reused throughout all examples.
+-- Note: creating a random generator is an expensive operation, so it should be only performed once in the code (usually in the top-level IO action, e.g `main`).
+
 
 module System.Random.MWC.Probability (
     module MWC
@@ -62,6 +72,8 @@ module System.Random.MWC.Probability (
   , laplace
   , gamma
   , inverseGamma
+  , normalGamma
+  , weibull
   , chiSquare
   , beta
   , student
@@ -97,14 +109,13 @@ import System.Random.MWC.CondensedTable
 
 -- | A probability distribution characterized by a sampling function.
 --
--- >>> gen <- create
 -- >>> sample uniform gen
 -- 0.4208881170464097
 newtype Prob m a = Prob { sample :: Gen (PrimState m) -> m a }
 
 -- | Sample from a model 'n' times.
 --
--- >>> create >>= samples 2 uniform
+-- >>> samples 2 uniform gen
 -- [0.6738707766845254,0.9730405951541817]
 samples :: PrimMonad m => Int -> Prob m a -> Gen (PrimState m) -> m [a]
 samples n model gen = replicateM n (sample model gen)
@@ -147,7 +158,6 @@ instance PrimMonad m => PrimMonad (Prob m) where
 
 -- | The uniform distribution over a type.
 --
---   >>> gen <- create
 --   >>> sample uniform gen :: IO Double
 --   0.29308497534914946
 --   >>> sample uniform gen :: IO Bool
@@ -207,6 +217,14 @@ laplace mu sigma = do
 {-# INLINABLE laplace #-}  
 
 
+-- | The Weibull distribution with provided shape and scale parameters.
+weibull :: (Floating a, Variate a, PrimMonad m) => a -> a -> Prob m a
+weibull a b = do
+  x <- uniform
+  return $ (- 1/a * log (1 - x)) ** 1/b
+{-# INLINABLE weibull #-}
+
+
 -- | The gamma distribution with shape parameter a and scale parameter b.
 --
 --   This is the parameterization used more traditionally in frequentist
@@ -222,6 +240,14 @@ gamma a b = Prob $ MWC.Dist.gamma a b
 inverseGamma :: PrimMonad m => Double -> Double -> Prob m Double
 inverseGamma a b = recip <$> gamma a b
 {-# INLINABLE inverseGamma #-}
+
+-- | The Normal-Gamma distribution of parameters mu, lambda, a, b
+normalGamma :: PrimMonad m => Double -> Double -> Double -> Double -> Prob m Double
+normalGamma mu lambda a b = do
+  tau <- gamma a b
+  let xsd = sqrt $ 1 / (lambda * tau)
+  normal mu xsd
+{-# INLINABLE normalGamma #-}
 
 -- | The chi-square distribution.
 chiSquare :: PrimMonad m => Int -> Prob m Double
@@ -307,10 +333,10 @@ categorical ps = do
 -- avoided as they are very computationally intensive. The following
 -- code illustrates this behaviour.
 -- 
--- >>> create >>= samples 10 (zipf 1.1)
+-- >>> samples 10 (zipf 1.1) gen
 -- [11315371987423520,2746946,653,609,2,13,85,4,256184577853,50]
 -- 
--- >>> create >>= samples 10 (zipf 1.5)
+-- >>> samples 10 (zipf 1.5) gen
 -- [19,3,3,1,1,2,1,191,2,1]
 zipf :: (PrimMonad m, Integral b) => Double -> Prob m b
 zipf a = do
