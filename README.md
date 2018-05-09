@@ -13,21 +13,22 @@ This implementation is a thin layer over `mwc-random`, which handles RNG
 state-passing automatically by using a `PrimMonad` like `IO` or `ST s` under
 the hood.
 
+
 Examples
 --------
 
-Transform a distribution's support while leaving its density structure
+1. Transform a distribution's support while leaving its density structure
 invariant:
 
-    -- uniform over [0, 1] to uniform over [1, 2]
+    -- uniform over [0, 1] transformed to uniform over [1, 2]
     succ <$> uniform
 
-Sequence distributions together using bind:
+2. Sequence distributions together using bind:
 
     -- a beta-binomial composite distribution
     beta 1 10 >>= binomial 10
 
-Use do-notation to build complex joint distributions from composable,
+3. Use do-notation to build complex joint distributions from composable,
 local conditionals:
 
     hierarchicalModel = do
@@ -38,3 +39,36 @@ local conditionals:
       n <- uniformR (5, 10)
       binomial n p
 
+
+
+Included probability distributions
+-------------
+
+## Continuous
+
+* Uniform
+* Normal
+* Log-Normal
+* Exponential
+* Inverse Gaussian
+* Laplace
+* Gamma
+* Inverse Gamma
+* Weibull
+* Chi-squared
+* Beta
+* Student t
+* Pareto
+* Dirichlet process
+* Symmetric Dirichlet process
+
+## Discrete
+
+* Discrete uniform
+* Zipf-Mandelbrot
+* Categorical
+* Bernoulli
+* Binomial
+* Negative Binomial
+* Multinomial
+* Poisson
