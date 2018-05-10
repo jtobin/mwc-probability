@@ -17,58 +17,58 @@ the hood.
 Examples
 --------
 
-1. Transform a distribution's support while leaving its density structure
+* Transform a distribution's support while leaving its density structure
 invariant:
 
-    -- uniform over [0, 1] transformed to uniform over [1, 2]
-    succ <$> uniform
+      -- uniform over [0, 1] transformed to uniform over [1, 2]
+      succ <$> uniform
 
-2. Sequence distributions together using bind:
+* Sequence distributions together using bind:
 
-    -- a beta-binomial composite distribution
-    beta 1 10 >>= binomial 10
+      -- a beta-binomial composite distribution
+      beta 1 10 >>= binomial 10
 
-3. Use do-notation to build complex joint distributions from composable,
+* Use do-notation to build complex joint distributions from composable,
 local conditionals:
 
-    hierarchicalModel = do
-      [c, d, e, f] <- replicateM 4 $ uniformR (1, 10)
-      a <- gamma c d
-      b <- gamma e f
-      p <- beta a b
-      n <- uniformR (5, 10)
-      binomial n p
+      hierarchicalModel = do
+        [c, d, e, f] <- replicateM 4 $ uniformR (1, 10)
+        a <- gamma c d
+        b <- gamma e f
+        p <- beta a b
+        n <- uniformR (5, 10)
+        binomial n p
 
 
 
 Included probability distributions
 -------------
 
-## Continuous
+* Continuous
 
-* Uniform
-* Normal
-* Log-Normal
-* Exponential
-* Inverse Gaussian
-* Laplace
-* Gamma
-* Inverse Gamma
-* Weibull
-* Chi-squared
-* Beta
-* Student t
-* Pareto
-* Dirichlet process
-* Symmetric Dirichlet process
+  * Uniform
+  * Normal
+  * Log-Normal
+  * Exponential
+  * Inverse Gaussian
+  * Laplace
+  * Gamma
+  * Inverse Gamma
+  * Weibull
+  * Chi-squared
+  * Beta
+  * Student t
+  * Pareto
+  * Dirichlet process
+  * Symmetric Dirichlet process  
 
-## Discrete
+* Discrete
 
-* Discrete uniform
-* Zipf-Mandelbrot
-* Categorical
-* Bernoulli
-* Binomial
-* Negative Binomial
-* Multinomial
-* Poisson
+  * Discrete uniform
+  * Zipf-Mandelbrot
+  * Categorical
+  * Bernoulli
+  * Binomial
+  * Negative Binomial
+  * Multinomial
+  * Poisson
