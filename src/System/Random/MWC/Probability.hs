@@ -73,6 +73,7 @@ module System.Random.MWC.Probability (
   , isoNormal    
   , logNormal
   , exponential
+  , inverseGaussian
   , laplace
   , gamma
   , inverseGamma
@@ -333,6 +334,23 @@ isoNormal
   :: (Traversable f, PrimMonad m) => f Double -> Double -> Prob m (f Double)
 isoNormal ms sd = traverse (`normal` sd) ms
 {-# INLINABLE isoNormal #-}
+
+-- | The inverse Gaussian (also known as Wald) distribution.
+--
+-- Both the mean parameter 'mu' and the shape parameter 'lambda' must be positive.
+inverseGaussian :: PrimMonad m => Double -> Double -> Prob m Double
+inverseGaussian lambda mu = do
+  nu <- standardNormal
+  let y = nu ** 2
+      s =  sqrt (4 * mu * lambda * y + mu ** 2  * y ** 2)
+      x = mu * (1 + 1 / (2 * lambda) * (mu * y - s))
+      thresh = mu / (mu + x)
+  z <- uniform
+  if z <= thresh
+    then return x
+    else return (mu ** 2 / x)
+{-# INLINABLE inverseGaussian #-}    
+  
 
 -- | The Poisson distribution.
 poisson :: PrimMonad m => Double -> Prob m Int
