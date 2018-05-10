@@ -337,17 +337,18 @@ isoNormal ms sd = traverse (`normal` sd) ms
 
 -- | The inverse Gaussian (also known as Wald) distribution.
 --
--- Both the mean parameter 'my' and the shape parameter 'lambda' must be positive.
+-- Both the mean parameter 'mu' and the shape parameter 'lambda' must be positive.
 inverseGaussian :: PrimMonad m => Double -> Double -> Prob m Double
-inverseGaussian lambda my = do
+inverseGaussian lambda mu = do
   nu <- standardNormal
   let y = nu ** 2
-      x = my + 1 / (2 * lambda) * (my ** 2 * y + my * sqrt (4 * my * lambda * y) + my ** 2  * y ** 2)
-      thresh = my / (my + x)
+      s =  sqrt (4 * mu * lambda * y + mu ** 2  * y ** 2)
+      x = mu * (1 + 1 / (2 * lambda) * (mu * y - s))
+      thresh = mu / (mu + x)
   z <- uniform
   if z <= thresh
     then return x
-    else return (my ** 2 / x)
+    else return (mu ** 2 / x)
 {-# INLINABLE inverseGaussian #-}    
   
 
