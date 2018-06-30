@@ -1,5 +1,5 @@
 name:                mwc-probability
-version:             2.0.3
+version:             2.0.4
 homepage:            http://github.com/jtobin/mwc-probability
 license:             MIT
 license-file:        LICENSE
@@ -25,11 +25,11 @@ description:
   invariant:
   .
   > -- uniform over [0, 1] to uniform over [1, 2]
-  > succ <$> uniform
+  > fmap succ uniform
   .
   Sequence distributions together using bind:
   .
-  > -- a beta-binomial conjugate distribution
+  > -- a beta-binomial compound distribution
   > beta 1 10 >>= binomial 10
   .
   Use do-notation to build complex joint distributions from composable,
