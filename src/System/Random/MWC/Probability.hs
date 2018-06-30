@@ -57,13 +57,11 @@ module System.Random.MWC.Probability (
   , Prob(..)
   , samples
 
-  -- * Distributions
-  -- ** Continuous-valued
   , uniform
   , uniformR
   , normal
   , standardNormal
-  , isoNormal    
+  , isoNormal
   , logNormal
   , exponential
   , inverseGaussian
@@ -74,12 +72,11 @@ module System.Random.MWC.Probability (
   , weibull
   , chiSquare
   , beta
+  , gstudent
   , student
   , pareto
-  -- *** Dirichlet process
   , dirichlet
-  , symmetricDirichlet  
-  -- ** Discrete-valued
+  , symmetricDirichlet
   , discreteUniform
   , zipf
   , categorical
@@ -87,9 +84,7 @@ module System.Random.MWC.Probability (
   , binomial
   , negativeBinomial
   , multinomial
-  , poisson  
-
-
+  , poisson
   ) where
 
 import Control.Applicative
@@ -356,11 +351,21 @@ multinomial n ps = do
       Nothing -> error "mwc-probability: invalid probability vector"
 {-# INLINABLE multinomial #-}
 
--- | Student's t distribution.
-student :: PrimMonad m => Double -> Double -> Double -> Prob m Double
-student m s k = do
-  sd <- sqrt <$> inverseGamma (k / 2) (s * 2 / k)
+-- | Generalized Student's t distribution with location parameter `m`, scale
+--   parameter `s`, and degrees of freedom `k`.
+--
+--   Note that the `s` and `k` parameters should be positive.
+gstudent :: PrimMonad m => Double -> Double -> Double -> Prob m Double
+gstudent m s k = do
+  sd <- fmap sqrt (inverseGamma (k / 2) (s * 2 / k))
   normal m sd
+{-# INLINABLE gstudent #-}
+
+-- | Student's t distribution with `k` degrees of freedom.
+--
+--   Note that `k` should be positive.
+student :: PrimMonad m => Double -> Prob m Double
+student = gstudent 0 1
 {-# INLINABLE student #-}
 
 -- | An isotropic or spherical Gaussian distribution with specified mean
