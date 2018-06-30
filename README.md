@@ -13,7 +13,6 @@ This implementation is a thin layer over `mwc-random`, which handles RNG
 state-passing automatically by using a `PrimMonad` like `IO` or `ST s` under
 the hood.
 
-
 Examples
 --------
 
@@ -29,46 +28,21 @@ invariant:
       beta 1 10 >>= binomial 10
 
 * Use do-notation to build complex joint distributions from composable,
-local conditionals:
+  local conditionals:
 
       hierarchicalModel = do
-        [c, d, e, f] <- replicateM 4 $ uniformR (1, 10)
+        [c, d, e, f] <- replicateM 4 (uniformR (1, 10))
         a <- gamma c d
         b <- gamma e f
         p <- beta a b
         n <- uniformR (5, 10)
         binomial n p
 
+Check out the haddock-generated docs on
+[Hackage](https://hackage.haskell.org/package/mwc-probability) for other
+examples.
 
+## Etc.
 
-Included probability distributions
--------------
+PRs and issues welcome.
 
-* Continuous
-
-  * Uniform
-  * Normal
-  * Log-Normal
-  * Exponential
-  * Inverse Gaussian
-  * Laplace
-  * Gamma
-  * Inverse Gamma
-  * Weibull
-  * Chi-squared
-  * Beta
-  * Student t
-  * Pareto
-  * Dirichlet process
-  * Symmetric Dirichlet process  
-
-* Discrete
-
-  * Discrete uniform
-  * Zipf-Mandelbrot
-  * Categorical
-  * Bernoulli
-  * Binomial
-  * Negative Binomial
-  * Multinomial
-  * Poisson
