@@ -114,7 +114,7 @@ newtype Prob m a = Prob { sample :: Gen (PrimState m) -> m a }
 -- >>> samples 2 uniform gen
 -- [0.6738707766845254,0.9730405951541817]
 samples :: PrimMonad m => Int -> Prob m a -> Gen (PrimState m) -> m [a]
-samples n model gen = replicateM n (sample model gen)
+samples n model gen = sequenceA (replicate n (sample model gen))
 {-# INLINABLE samples #-}
 
 instance Functor m => Functor (Prob m) where
