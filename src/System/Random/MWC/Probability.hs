@@ -4,18 +4,20 @@
 
 -- |
 -- Module: System.Random.MWC.Probability
--- Copyright: (c) 2015-2017 Jared Tobin, Marco Zocca
+-- Copyright: (c) 2015-2018 Jared Tobin, Marco Zocca
 -- License: MIT
 --
 -- Maintainer: Jared Tobin <jared@jtobin.ca>, Marco Zocca <zocca.marco gmail>
 -- Stability: unstable
 -- Portability: ghc
 --
--- A probability monad based on sampling functions.
+-- A probability monad based on sampling functions, implemented as a thin
+-- wrapper over the
+-- [mwc-random](https://hackage.haskell.org/package/mwc-random) library.
 --
 -- Probability distributions are abstract constructs that can be represented in
 -- a variety of ways.  The sampling function representation is particularly
--- useful - it's computationally efficient, and collections of samples are
+-- useful -- it's computationally efficient, and collections of samples are
 -- amenable to much practical work.
 --
 -- Probability monads propagate uncertainty under the hood.  An expression like
@@ -37,27 +39,18 @@
 -- >   n <- uniformR (5, 10)
 -- >   binomial n p
 --
--- The functor instance for a probability monad transforms the support of the
--- distribution while leaving its density structure invariant in some sense.
--- For example, @'uniform'@ is a distribution over the 0-1 interval, but @fmap
--- (+ 1) uniform@ is the translated distribution over the 1-2 interval.
+-- The functor instance allows one to transforms the support of a distribution
+-- while leaving its density structure invariant.  For example, @'uniform'@ is
+-- a distribution over the 0-1 interval, but @fmap (+ 1) uniform@ is the
+-- translated distribution over the 1-2 interval:
 --
 -- >>> create >>= sample (fmap (+ 1) uniform)
 -- 1.5480073474340754
 --
--- == Running the examples
+-- The applicative instance guarantees that the generated samples are generated
+-- independently:
 --
--- In the following we will assume an interactive GHCi session; the user should first declare a random number generator: 
---
--- >>> gen <- create
---
--- which will be reused throughout all examples.
--- Note: creating a random generator is an expensive operation, so it should be only performed once in the code (usually in the top-level IO action, e.g `main`).
---
--- == References
---
--- 1) L.Devroye, Non-Uniform Random Variate Generation, Springer-Verlag, New York, 1986. (Made freely available by the author: http://www.nrbook.com/devroye )
-
+-- >>> create >>= sample ((,) <$> uniform <*> uniform)
 
 module System.Random.MWC.Probability (
     module MWC
@@ -116,6 +109,7 @@ import System.Random.MWC.CondensedTable
 
 -- | A probability distribution characterized by a sampling function.
 --
+-- >>> gen <- createSystemRandom
 -- >>> sample uniform gen
 -- 0.4208881170464097
 newtype Prob m a = Prob { sample :: Gen (PrimState m) -> m a }
@@ -150,8 +144,6 @@ instance (Monad m, Num a) => Num (Prob m a) where
   signum      = fmap signum
   fromInteger = pure . fromInteger
 
-
-
 instance MonadTrans Prob where
   lift m = Prob $ const m
 
@@ -163,7 +155,10 @@ instance PrimMonad m => PrimMonad (Prob m) where
   primitive = lift . primitive
   {-# INLINE primitive #-}
 
--- | The uniform distribution over a type.
+-- | The uniform distribution at a specified type.
+--
+--   Note that `Double` and `Float` variates are defined over the unit
+--   interval.
 --
 --   >>> sample uniform gen :: IO Double
 --   0.29308497534914946
@@ -193,75 +188,95 @@ discreteUniform cs = do
   return $ F.toList cs !! j
 {-# INLINABLE discreteUniform #-}
 
--- | The standard normal or Gaussian distribution (with mean 0 and standard
---   deviation 1).
+-- | The standard normal or Gaussian distribution with mean 0 and standard
+--   deviation 1.
 standardNormal :: PrimMonad m => Prob m Double
 standardNormal = Prob MWC.Dist.standard
 {-# INLINABLE standardNormal #-}
 
--- | The normal or Gaussian distribution with a specified mean and standard
+-- | The normal or Gaussian distribution with specified mean and standard
 --   deviation.
+--
+--   Note that `sd` should be positive.
 normal :: PrimMonad m => Double -> Double -> Prob m Double
 normal m sd = Prob $ MWC.Dist.normal m sd
 {-# INLINABLE normal #-}
 
 -- | The log-normal distribution with specified mean and standard deviation.
+--
+--   Note that `sd` should be positive.
 logNormal :: PrimMonad m => Double -> Double -> Prob m Double
 logNormal m sd = exp <$> normal m sd
 {-# INLINABLE logNormal #-}
 
 -- | The exponential distribution with provided rate parameter.
+--
+--   Note that `r` should be positive.
 exponential :: PrimMonad m => Double -> Prob m Double
 exponential r = Prob $ MWC.Dist.exponential r
 {-# INLINABLE exponential #-}
 
--- | The Laplace distribution with provided location and scale parameters.
+-- | The Laplace or double-exponential distribution with provided location and
+--   scale parameters.
+--
+--   Note that `sigma` should be positive.
 laplace :: (Floating a, Variate a, PrimMonad m) => a -> a -> Prob m a
 laplace mu sigma = do
   u <- uniformR (-0.5, 0.5)
   let b = sigma / sqrt 2
   return $ mu - b * signum u * log (1 - 2 * abs u)
-{-# INLINABLE laplace #-}  
-
+{-# INLINABLE laplace #-}
 
 -- | The Weibull distribution with provided shape and scale parameters.
+--
+--   Note that both parameters should be positive.
 weibull :: (Floating a, Variate a, PrimMonad m) => a -> a -> Prob m a
 weibull a b = do
   x <- uniform
   return $ (- 1/a * log (1 - x)) ** 1/b
 {-# INLINABLE weibull #-}
 
-
--- | The gamma distribution with shape parameter a and scale parameter b.
+-- | The gamma distribution with shape parameter `a` and scale parameter `b`.
 --
 --   This is the parameterization used more traditionally in frequentist
 --   statistics.  It has the following corresponding probability density
 --   function:
 --
---   f(x; a, b) = 1 / (Gamma(a) * b ^ a) x ^ (a - 1) e ^ (- x / b)
+-- > f(x; a, b) = 1 / (Gamma(a) * b ^ a) x ^ (a - 1) e ^ (- x / b)
+--
+--   Note that both parameters should be positive.
 gamma :: PrimMonad m => Double -> Double -> Prob m Double
 gamma a b = Prob $ MWC.Dist.gamma a b
 {-# INLINABLE gamma #-}
 
--- | The inverse-gamma distribution.
+-- | The inverse-gamma distribution with shape parameter `a` and scale
+--   parameter `b`.
+--
+--   Note that both parameters should be positive.
 inverseGamma :: PrimMonad m => Double -> Double -> Prob m Double
 inverseGamma a b = recip <$> gamma a b
 {-# INLINABLE inverseGamma #-}
 
--- | The Normal-Gamma distribution of parameters mu, lambda, a, b
+-- | The Normal-Gamma distribution.
+--
+--   Note that the `lambda`, `a`, and `b` parameters should be positive.
 normalGamma :: PrimMonad m => Double -> Double -> Double -> Double -> Prob m Double
 normalGamma mu lambda a b = do
   tau <- gamma a b
-  let xsd = sqrt $ 1 / (lambda * tau)
+  let xsd = sqrt (recip (lambda * tau))
   normal mu xsd
 {-# INLINABLE normalGamma #-}
 
--- | The chi-square distribution.
+-- | The chi-square distribution with the specified degrees of freedom.
+--
+--   Note that `k` should be positive.
 chiSquare :: PrimMonad m => Int -> Prob m Double
 chiSquare k = Prob $ MWC.Dist.chiSquare k
 {-# INLINABLE chiSquare #-}
 
--- | The beta distribution.
+-- | The beta distribution with the specified shape parameters.
+--
+--   Note that both parameters should be positive.
 beta :: PrimMonad m => Double -> Double -> Prob m Double
 beta a b = do
   u <- gamma a 1
@@ -269,16 +284,24 @@ beta a b = do
   return $ u / (u + w)
 {-# INLINABLE beta #-}
 
--- | The Pareto distribution with specified index `a` and minimum `xmin` parameters.
+-- | The Pareto distribution with specified index `a` and minimum `xmin`
+--   parameters.
 --
--- Both `a` and `xmin` must be positive.
+--   Note that both parameters should be positive.
 pareto :: PrimMonad m => Double -> Double -> Prob m Double
 pareto a xmin = do
   y <- exponential a
   return $ xmin * exp y
-{-# INLINABLE pareto #-}  
+{-# INLINABLE pareto #-}
 
--- | The Dirichlet distribution.
+-- | The Dirichlet distribution with the provided concentration parameters.
+--   The dimension of the distribution is determined by the number of
+--   concentration parameters supplied.
+--
+--   >>> sample (dirichlet [0.1, 1, 10]) gen
+--   [1.2375387187120799e-5,3.4952460651813816e-3,0.9964923785476316]
+--
+--   Note that all concentration parameters should be positive.
 dirichlet
   :: (Traversable f, PrimMonad m) => f Double -> Prob m (f Double)
 dirichlet as = do
@@ -286,39 +309,51 @@ dirichlet as = do
   return $ fmap (/ sum zs) zs
 {-# INLINABLE dirichlet #-}
 
--- | The symmetric Dirichlet distribution of dimension n.
+-- | The symmetric Dirichlet distribution with dimension `n`.  The provided
+--   concentration parameter is simply replicated `n` times.
+--
+--   Note that `a` should be positive.
 symmetricDirichlet :: PrimMonad m => Int -> Double -> Prob m [Double]
 symmetricDirichlet n a = dirichlet (replicate n a)
 {-# INLINABLE symmetricDirichlet #-}
 
--- | The Bernoulli distribution.
+-- | The Bernoulli distribution with success probability `p`.
 bernoulli :: PrimMonad m => Double -> Prob m Bool
 bernoulli p = (< p) <$> uniform
 {-# INLINABLE bernoulli #-}
 
--- | The binomial distribution.
+-- | The binomial distribution with number of trials `n` and success
+--   probability `p`.
+--
+--   >>> sample (binomial 10 0.3) gen
+--   4
 binomial :: PrimMonad m => Int -> Double -> Prob m Int
 binomial n p = fmap (length . filter id) $ replicateM n (bernoulli p)
 {-# INLINABLE binomial #-}
 
--- | The negative binomial distribution with `n` trials each with "success" probability `p`.
--- Example X.1.5 in [1].
+-- | The negative binomial distribution with number of trials `n` and success
+--   probability `p`.
 --
--- Note: `n` must be larger than 1 and `p` included between 0 and 1.
+--   >>> sample (negativeBinomial 10 0.3) gen
+--   21
 negativeBinomial :: (PrimMonad m, Integral a) => a -> Double -> Prob m Int
 negativeBinomial n p = do
-  y <- gamma (fromIntegral n) ((1-p) / p)
+  y <- gamma (fromIntegral n) ((1 - p) / p)
   poisson y
 {-# INLINABLE negativeBinomial #-}
 
--- | The multinomial distribution.
+-- | The multinomial distribution of `n` trials and category probabilities
+--   `ps`.
+--
+--   Note that `ps` is a vector of probabilities and should sum to one.
 multinomial :: (Foldable f, PrimMonad m) => Int -> f Double -> Prob m [Int]
 multinomial n ps = do
   let cumulative = scanl1 (+) (F.toList ps)
   replicateM n $ do
     z <- uniform
-    let Just g = findIndex (> z) cumulative
-    return g
+    case findIndex (> z) cumulative of
+      Just g  -> return g
+      Nothing -> error "mwc-probability: invalid probability vector"
 {-# INLINABLE multinomial #-}
 
 -- | Student's t distribution.
@@ -329,15 +364,18 @@ student m s k = do
 {-# INLINABLE student #-}
 
 -- | An isotropic or spherical Gaussian distribution with specified mean
--- vector and scalar standard deviation parameter.
+--   vector and scalar standard deviation parameter.
+--
+--   Note that `sd` should be positive.
 isoNormal
   :: (Traversable f, PrimMonad m) => f Double -> Double -> Prob m (f Double)
 isoNormal ms sd = traverse (`normal` sd) ms
 {-# INLINABLE isoNormal #-}
 
--- | The inverse Gaussian (also known as Wald) distribution.
+-- | The inverse Gaussian (also known as Wald) distribution with mean parameter
+--   `mu` and shape parameter `lambda`.
 --
--- Both the mean parameter 'mu' and the shape parameter 'lambda' must be positive.
+--   Note that both 'mu' and 'lambda' should be positive.
 inverseGaussian :: PrimMonad m => Double -> Double -> Prob m Double
 inverseGaussian lambda mu = do
   nu <- standardNormal
@@ -349,37 +387,37 @@ inverseGaussian lambda mu = do
   if z <= thresh
     then return x
     else return (mu ** 2 / x)
-{-# INLINABLE inverseGaussian #-}    
-  
+{-# INLINABLE inverseGaussian #-}
 
--- | The Poisson distribution.
+-- | The Poisson distribution with rate parameter `l`.
+--
+--   Note that `l` should be positive.
 poisson :: PrimMonad m => Double -> Prob m Int
 poisson l = Prob $ genFromTable table where
   table = tablePoisson l
 {-# INLINABLE poisson #-}
 
--- | A categorical distribution defined by the supplied list of probabilities.
+-- | A categorical distribution defined by the supplied probabilities.
+--
+--   Note that the supplied container of probabilities must sum to 1.
 categorical :: (Foldable f, PrimMonad m) => f Double -> Prob m Int
 categorical ps = do
   xs <- multinomial 1 ps
   case xs of
     [x] -> return x
-    _   -> error "categorical: invalid return value"
+    _   -> error "mwc-probability: invalid probability vector"
 {-# INLINABLE categorical #-}
 
-
--- | The Zipf-Mandelbrot distribution, generated with the rejection
--- sampling algorithm X.6.1 shown in [1].
+-- | The Zipf-Mandelbrot distribution.
 --
--- The parameter should be positive, but values close to 1 should be
--- avoided as they are very computationally intensive. The following
--- code illustrates this behaviour.
--- 
--- >>> samples 10 (zipf 1.1) gen
--- [11315371987423520,2746946,653,609,2,13,85,4,256184577853,50]
--- 
--- >>> samples 10 (zipf 1.5) gen
--- [19,3,3,1,1,2,1,191,2,1]
+--   Note that `a` should be positive, and that values close to 1 should be
+--   avoided as they are very computationally intensive.
+--
+--   >>> samples 10 (zipf 1.1) gen
+--   [11315371987423520,2746946,653,609,2,13,85,4,256184577853,50]
+--
+--   >>> samples 10 (zipf 1.5) gen
+--   [19,3,3,1,1,2,1,191,2,1]
 zipf :: (PrimMonad m, Integral b) => Double -> Prob m b
 zipf a = do
   let
@@ -387,11 +425,11 @@ zipf a = do
     go = do
         u <- uniform
         v <- uniform
-        let xInt = floor (u ** (- 1 / (a - 1))) 
+        let xInt = floor (u ** (- 1 / (a - 1)))
             x = fromIntegral xInt
             t = (1 + 1 / x) ** (a - 1)
         if v * x * (t - 1) / (b - 1) <= t / b
           then return xInt
           else go
   go
-{-# INLINABLE zipf #-}  
+{-# INLINABLE zipf #-}
