@@ -1,8 +1,0 @@
-flags: {}
-packages:
-- '.'
-extra-deps: []
-resolver: nightly-2018-05-09
-compiler: ghc-8.4.2
-system-ghc: false
-install-ghc: true
