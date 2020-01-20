@@ -454,20 +454,22 @@ zipf a = do
 
 -- * Chinese Restaurant process
 
--- | Pitman-Yor process 
+
+-- | Pitman-Yor process
+--
+-- This implementation is given in terms of the Chinese Restaurant process
 pitmanYor :: (PrimMonad f) =>
              Double -- ^ a \in [0, 1]
           -> Double -- ^ b > 0
-          -> Int    -- ^ number of samples
-          -> Gen (PrimState f)
-          -> f [Integer]
-pitmanYor a b n gen = do
+          -> Int    -- ^ Total number of customers entering the Chinese Restaurant
+          -> Prob f [Integer]
+pitmanYor a b n = do
   ts <- go crpInitial (n - 1)
   pure $ map getSum $ customers ts
   where
     go acc 0 = pure acc
     go acc i = do
-      acc' <- sample (pitmanYorSingle a b acc) gen
+      acc' <- pitmanYorSingle a b acc
       go acc' (i - 1)
 
 pitmanYorSingle :: (PrimMonad m, Integral a) =>
