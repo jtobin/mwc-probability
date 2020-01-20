@@ -480,7 +480,7 @@ pitmanYorSingle a b zs = do
   pure $ crpInsert zn1 zs
   where
     m = fromIntegral $ uniques zs
-    n = fromIntegral $ numCustomers zs
+    n = fromIntegral $ sum (getSum <$> zs)
     d = n + b
     probs = pms <> [pm1]
     pm1 = (m * a + b) / d
@@ -490,17 +490,19 @@ pitmanYorSingle a b zs = do
 newtype CRPTables c = CRP {
   getCRPTables :: IM.IntMap c } deriving (Eq, Show, Functor, Foldable)
 
+-- | Initial state of the CRP : one customer sitting at table #0
 crpInitial :: CRPTables (Sum Integer)
 crpInitial = crpInsert 0 $ CRP IM.empty
 
+-- | Seat one customer at table 'k'
 crpInsert :: Num a => IM.Key -> CRPTables (Sum a) -> CRPTables (Sum a)
 crpInsert k (CRP ts) = CRP $ IM.insertWith (<>) k (Sum 1) ts
 
+-- | Number of tables
 uniques :: CRPTables a -> Int
 uniques (CRP ts) = length ts
 
+-- | Number of customers sitting at each table
 customers :: CRPTables c -> [c]
 customers = map snd . IM.toList . getCRPTables
 
-numCustomers :: (Foldable t, Functor t, Num a) => t (Sum a) -> a
-numCustomers = sum . fmap getSum
