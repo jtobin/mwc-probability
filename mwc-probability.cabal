@@ -55,6 +55,7 @@ library
   hs-source-dirs:      src
   build-depends:
       base          >=  4.8 && < 6
+    , containers
     , mwc-random    >   0.13 && < 0.15
     , primitive     >=  0.6 && < 1.0
     , transformers  >=  0.5 && < 1.0
