@@ -1,5 +1,8 @@
 	# Changelog
 
+	- 2.2.0 (2020-01-29)
+	* Adds the Chinese Restaurant Process (crp).
+
 	- 2.1.0 (2019-07-23)
 	* Generalises 'categorical' and 'multinomial' to take things proportional to
 	  probabilities, rather than probabilities proper.
