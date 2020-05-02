@@ -83,6 +83,7 @@ module System.Random.MWC.Probability (
   , discreteUniform
   , zipf
   , categorical
+  , discrete
   , bernoulli
   , binomial
   , negativeBinomial
@@ -425,6 +426,20 @@ categorical ps = do
     [x] -> return x
     _   -> error "mwc-probability: invalid probability vector"
 {-# INLINABLE categorical #-}
+
+-- | A categorical distribution defined by the supplied support.
+--
+--   Note that the supplied probabilities should be non-negative, but are not
+--   required to sum to one.
+--
+--   >>> samples 10 (discrete [(0.1, "yeah"), (0.9, "nah")]) gen
+--   ["yeah","nah","nah","nah","nah","yeah","nah","nah","nah","nah"]
+discrete :: (Foldable f, PrimMonad m) => f (Double, a) -> Prob m a
+discrete d = do
+  let (ps, xs) = unzip (F.toList d)
+  idx <- categorical ps
+  pure (xs !! idx)
+{-# INLINABLE discrete #-}
 
 -- | The Zipf-Mandelbrot distribution.
 --
