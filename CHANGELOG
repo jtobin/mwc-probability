@@ -1,5 +1,8 @@
 # Changelog
 
+- 2.3.1 (2020-07-31)
+  * Relaxes the upper bound on mwc-random.
+
 - 2.3.0 (2020-05-02)
   * Adds the discrete distribution (like categorical, but with supplied
     support).
